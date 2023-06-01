@@ -1,0 +1,27 @@
+{
+  "buildFiles": [
+    "D:\\Downloads\\android-basics-edina\\CameraDarwing\\opencv\\libcxx_helper\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "D:\\AndroidSdk\\cmake\\3.18.1\\bin\\ninja.exe",
+      "-C",
+      "D:\\Downloads\\android-basics-edina\\CameraDarwing\\opencv\\.cxx\\Debug\\3g6b2e53\\x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "D:\\AndroidSdk\\cmake\\3.18.1\\bin\\ninja.exe",
+    "-C",
+    "D:\\Downloads\\android-basics-edina\\CameraDarwing\\opencv\\.cxx\\Debug\\3g6b2e53\\x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "opencv_jni_shared::@6890427a1f51a3e7e1df": {
+      "artifactName": "opencv_jni_shared",
+      "abi": "x86",
+      "output": "D:\\Downloads\\android-basics-edina\\CameraDarwing\\opencv\\.cxx\\Debug\\3g6b2e53\\x86\\libopencv_jni_shared.a",
+      "runtimeFiles": []
+    }
+  }
+}

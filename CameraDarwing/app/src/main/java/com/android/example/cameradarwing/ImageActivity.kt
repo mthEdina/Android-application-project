@@ -42,7 +42,6 @@ class ImageActivity : AppCompatActivity() {
         ) ?: throw IllegalStateException("Cursor is null")
         imageAdapter = ImageAdapter(this, imageCursor)
 
-        // Gombok elrejtése
         viewBinding.imageCaptureButton.visibility = View.GONE
         viewBinding.videoCaptureButton.visibility = View.GONE
         viewBinding.showImagesButton.visibility = View.GONE

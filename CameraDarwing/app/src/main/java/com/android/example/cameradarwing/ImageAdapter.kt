@@ -6,7 +6,6 @@ import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.net.Uri
-import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -21,7 +20,6 @@ import org.opencv.android.Utils
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
 
-//RecyclerView a ListView tovabbfejlesztett verzioja
 class ImageAdapter(private val context: Context, private var cursor: Cursor) :
     RecyclerView.Adapter<ImageAdapter.ImageViewHolder>() {
 
@@ -35,18 +33,15 @@ class ImageAdapter(private val context: Context, private var cursor: Cursor) :
         return ImageViewHolder(view)
     }
 
-    //megadjuk a kep eleresi utjat (imageUri) a cursor segitsegevel
     @SuppressLint("Range")
     override fun onBindViewHolder(holder: ImageViewHolder, position: Int) {
-        cursor.moveToPosition(position)
+        //cursor.moveToPosition(position)
 
-        val imageName = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME))
+        // for example:
+        var imageName = "2024-03-30-22-33-52-230"
         holder.imageNameTextView.text = imageName
 
-        val imageUri = Uri.withAppendedPath(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media._ID))
-        )
+        val imageUri = Uri.parse("android.resource://${context.packageName}/drawable/$imageName")
 
         // Load the image into a Glide ImageView directly
         // Glide is an image-loading library for Android
@@ -63,8 +58,14 @@ class ImageAdapter(private val context: Context, private var cursor: Cursor) :
                     Utils.bitmapToMat(bitmap, originalMat)
 
                     // Apply the filter (e.g., grayscale)
+                    // val grayMat = Mat()
+                    // Imgproc.cvtColor(originalMat, grayMat, Imgproc.COLOR_RGB2GRAY)
+
+                    // Apply the Canny edge detection
                     val grayMat = Mat()
                     Imgproc.cvtColor(originalMat, grayMat, Imgproc.COLOR_RGB2GRAY)
+                    //Imgproc.GaussianBlur(grayMat, grayMat, Size(5.0, 5.0), 2.2, 2.0)
+                    Imgproc.Canny(grayMat, grayMat, 25.0, 75.0)
 
                     // Convert the processed Mat back to Bitmap
                     val filteredBitmap = Bitmap.createBitmap(grayMat.cols(), grayMat.rows(), Bitmap.Config.ARGB_8888)

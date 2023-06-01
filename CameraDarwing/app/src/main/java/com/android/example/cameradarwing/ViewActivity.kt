@@ -8,11 +8,15 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
-import android.util.Log
+import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -31,7 +35,7 @@ class ViewActivity : AppCompatActivity() {
         setContentView(customView)
     }
 
-    class CustomView(context: Context) : View(context) {
+    class CustomView : View {
 
         private val paint = Paint().apply {
             color = Color.BLACK
@@ -42,21 +46,26 @@ class ViewActivity : AppCompatActivity() {
             strokeJoin = Paint.Join.ROUND
         }
 
-        //gombok pozicioja
         private val saveButtonRect = Rect()
         private val clearButtonRect = Rect()
+        private val colorPickerButtonRect = Rect()
+        private val buttonMargin = 20
         private val path = Path()
 
-        // Bitmap a rajz tárolásához
+
         private var drawingBitmap: Bitmap? = null
+
+        private var currentColor = Color.BLACK
+
+        constructor(context: Context) : super(context)
+        constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
+        constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
         override fun onDraw(canvas: Canvas?) {
             super.onDraw(canvas)
 
-            // Rajzolás a panelra
             canvas?.drawPath(path, paint)
 
-            // Rajzolás a mentés gombra
             canvas?.drawRect(saveButtonRect, paint)
             paint.textSize = 40f
             canvas?.drawText(
@@ -66,7 +75,6 @@ class ViewActivity : AppCompatActivity() {
                 paint
             )
 
-            // Rajzolás a törlés gombra
             canvas?.drawRect(clearButtonRect, paint)
             canvas?.drawText(
                 "Delete",
@@ -74,8 +82,16 @@ class ViewActivity : AppCompatActivity() {
                 clearButtonRect.centerY().toFloat(),
                 paint
             )
-        }
 
+            paint.color = currentColor
+            canvas?.drawRect(colorPickerButtonRect, paint)
+            canvas?.drawText(
+                "Color palette",
+                colorPickerButtonRect.centerX().toFloat() - 60,
+                colorPickerButtonRect.centerY().toFloat(),
+                paint
+            )
+        }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
             val x = event.x
@@ -87,11 +103,12 @@ class ViewActivity : AppCompatActivity() {
                         saveDrawing()
                     } else if (clearButtonRect.contains(x.toInt(), y.toInt())) {
                         clearDrawing()
+                    } else if (colorPickerButtonRect.contains(x.toInt(), y.toInt())) {
+                        showColorPickerDialog()
                     } else {
                         path.moveTo(x, y)
                     }
                 }
-
                 MotionEvent.ACTION_MOVE -> {
                     if (!saveButtonRect.contains(x.toInt(), y.toInt()) && !clearButtonRect.contains(
                             x.toInt(),
@@ -101,7 +118,6 @@ class ViewActivity : AppCompatActivity() {
                         path.lineTo(x, y)
                     }
                 }
-
                 MotionEvent.ACTION_UP -> {
                     // Nothing to do here for now
                 }
@@ -112,25 +128,19 @@ class ViewActivity : AppCompatActivity() {
         }
 
         private fun saveDrawing() {
-            // Ellenőrizzük, hogy ténylegesen van-e rajzolás
             if (path.isEmpty) {
                 Toast.makeText(context, "Nothing to save.", Toast.LENGTH_SHORT).show()
                 return
             }
 
-            // Bitmap létrehozása vagy frissítése a rajzzal
             if (drawingBitmap == null) {
                 drawingBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
             }
 
-            // Új canvas, amely a bitmapre rajzol
             val canvas = Canvas(drawingBitmap!!)
-            // Rajzolás az útvonalak átmásolásával a canvas-ra
             canvas.drawPath(path, paint)
-            // A path resetelése
             path.reset()
 
-            // Mentési útvonal létrehozása
             val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val fileName = "Drawing_$timeStamp.png"
             val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
@@ -140,7 +150,6 @@ class ViewActivity : AppCompatActivity() {
             }
             val file = File(directory, fileName)
 
-            // Készítsd el a PNG fájlt a bitmapből
             try {
                 val outputStream: OutputStream?
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -150,10 +159,10 @@ class ViewActivity : AppCompatActivity() {
                         put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
                         put(MediaStore.MediaColumns.RELATIVE_PATH, "Pictures/CameraX-Image")
                     }
-                    val imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                    val imageUri =
+                        resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
                     outputStream = imageUri?.let { resolver.openOutputStream(it) }
                 } else {
-                    // Ha az Android verzió kevesebb, mint 29----> FileProvider-t kell hasznalni
                     val directory = File(
                         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
                         "CameraX-Image"
@@ -169,14 +178,12 @@ class ViewActivity : AppCompatActivity() {
                 outputStream?.flush()
                 outputStream?.close()
 
-                // Értesítés a felhasználónak a sikeres mentésről
                 Toast.makeText(
                     context,
                     "Drawing saved to Pictures/CameraX-Image/$fileName",
                     Toast.LENGTH_SHORT
                 ).show()
             } catch (e: IOException) {
-                // Hibaüzenet, ha nem sikerült a mentés
                 Toast.makeText(context, "Failed to save drawing", Toast.LENGTH_SHORT).show()
                 e.printStackTrace()
             }
@@ -188,39 +195,110 @@ class ViewActivity : AppCompatActivity() {
             )
         }
 
-
         override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
             super.onSizeChanged(w, h, oldw, oldh)
 
-            // Elhelyezés és méret beállítása a mentés gombnak
-            val saveButtonWidth = 200
-            val saveButtonHeight = 100
-            val saveButtonLeft = width - saveButtonWidth - 50
-            val saveButtonTop = height - saveButtonHeight - 50
+            // Set the positions and sizes of the buttons
+            val buttonWidth = 200
+            val buttonHeight = 100
+
+            // Save button
             saveButtonRect.set(
-                saveButtonLeft,
-                saveButtonTop,
-                saveButtonLeft + saveButtonWidth,
-                saveButtonTop + saveButtonHeight
+                width - buttonWidth - buttonMargin,
+                height - buttonHeight - buttonMargin,
+                width - buttonMargin,
+                height - buttonMargin
             )
 
-            // Elhelyezés és méret beállítása a törlés gombnak
-            val clearButtonWidth = 200
-            val clearButtonHeight = 100
-            val clearButtonLeft = 50
-            val clearButtonTop = height - clearButtonHeight - 50
+            // Clear button
             clearButtonRect.set(
-                clearButtonLeft,
-                clearButtonTop,
-                clearButtonLeft + clearButtonWidth,
-                clearButtonTop + clearButtonHeight
+                buttonMargin,
+                height - buttonHeight - buttonMargin,
+                buttonMargin + buttonWidth,
+                height - buttonMargin
+            )
+
+            // Color picker button
+            colorPickerButtonRect.set(
+                (width - buttonWidth) / 2 - buttonWidth,
+                height - buttonHeight - buttonMargin,
+                (width - buttonWidth) / 2 + buttonWidth,
+                height - buttonMargin
             )
         }
 
 
-        fun clearDrawing() {
+        private fun clearDrawing() {
             path.reset()
             invalidate()
+        }
+
+        private fun showColorPickerDialog() {
+            val colorPickerDialog = AlertDialog.Builder(context)
+                .setTitle("Choose Color")
+                .setPositiveButton("OK") { _, _ ->
+                    paint.color = currentColor
+                    invalidate()
+                }
+                .setNegativeButton("Cancel", null)
+                .setView(createColorPickerView())
+                .create()
+
+            colorPickerDialog.show()
+        }
+
+        private fun createColorPickerView(): View {
+            val colorPickerView = RecyclerView(context)
+            colorPickerView.layoutManager = GridLayoutManager(context, 4)
+            colorPickerView.adapter = ColorAdapter(getColorList())
+
+            return colorPickerView
+        }
+
+        private fun getColorList(): List<Int> {
+            // Provide a list of colors for the RecyclerView items
+            // For simplicity, I'm using a predefined list, but you can customize it as needed
+            return listOf(
+                Color.RED,
+                Color.BLUE,
+                Color.GREEN,
+                Color.YELLOW,
+                Color.CYAN,
+                Color.MAGENTA,
+                Color.BLACK,
+                Color.WHITE
+            )
+        }
+
+        private inner class ColorAdapter(private val colorList: List<Int>) :
+            RecyclerView.Adapter<ColorAdapter.ColorViewHolder>() {
+
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ColorViewHolder {
+                val itemView =
+                    View.inflate(parent.context, R.layout.color_item, null)
+                return ColorViewHolder(itemView)
+            }
+
+            override fun onBindViewHolder(holder: ColorViewHolder, position: Int) {
+                val color = colorList[position]
+                holder.setColor(color)
+            }
+
+            override fun getItemCount(): Int = colorList.size
+
+            inner class ColorViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+                private val colorView: View = itemView.findViewById(R.id.colorView)
+
+                fun setColor(color: Int) {
+                    colorView.setBackgroundColor(color)
+                    colorView.setOnClickListener {
+                        // The user selected a color
+                        currentColor = color
+                        paint.color = currentColor
+                        invalidate()
+                    }
+                }
+            }
         }
     }
 }
