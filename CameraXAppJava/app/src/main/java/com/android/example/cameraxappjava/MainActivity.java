@@ -138,13 +138,8 @@ public class MainActivity extends AppCompatActivity {
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
                 .setContentValues(contentValues)
                 .build();
-        /*recording = videoCapture.getOutput().prepareRecording(this, mediaStoreOutputOptions)
-                .apply(recordBuilder -> {
-                    if (PermissionChecker.checkSelfPermission(MainActivity.this,
-                            Manifest.permission.RECORD_AUDIO) == PermissionChecker.PERMISSION_GRANTED) {
-                        recordBuilder.withAudioEnabled();
-                    }
-                })
+
+        recording = videoCapture.getOutput().prepareRecording(this, mediaStoreOutputOptions)
                 .start(ContextCompat.getMainExecutor(this), (VideoRecordEvent recordEvent) -> {
                     if (recordEvent instanceof VideoRecordEvent.Start) {
                         viewBinding.videoCaptureButton.setText(getString(R.string.stop_capture));
@@ -165,8 +160,9 @@ public class MainActivity extends AppCompatActivity {
                         viewBinding.videoCaptureButton.setText(getString(R.string.start_capture));
                         viewBinding.videoCaptureButton.setEnabled(true);
                     }
-                }); */
+                });
     }
+
 
     private void startCamera() {
         ProcessCameraProvider.getInstance(this).addListener(() -> {
@@ -182,14 +178,6 @@ public class MainActivity extends AppCompatActivity {
                 videoCapture = VideoCapture.withOutput(recorder);
 
                 imageCapture = new ImageCapture.Builder().build();
-
-                /* ImageAnalysis imageAnalyzer = new ImageAnalysis.Builder()
-                    .build()
-                    .also {
-                        it.setAnalyzer(cameraExecutor, new LuminosityAnalyzer(luma -> {
-                            Log.d(TAG, "Average luminosity: " + luma);
-                        }));
-                    }*/
 
                 // Select back camera as a default
                 CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
