@@ -3,6 +3,7 @@ package com.android.example.cameraxappjava;
 import android.Manifest;
 import android.content.ContentValues;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -15,6 +16,8 @@ import androidx.camera.video.VideoCapture;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import com.android.example.cameraxappjava.databinding.ActivityMainBinding;
+
+import java.io.FileOutputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import android.widget.Toast;
@@ -31,10 +34,15 @@ import androidx.camera.video.MediaStoreOutputOptions;
 import androidx.camera.video.Quality;
 import androidx.camera.video.QualitySelector;
 import androidx.camera.video.VideoRecordEvent;
-import androidx.core.content.PermissionChecker;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -66,6 +74,67 @@ public class MainActivity extends AppCompatActivity {
         viewBinding.videoCaptureButton.setOnClickListener(v -> captureVideo());
 
         cameraExecutor = Executors.newSingleThreadExecutor();
+    }
+
+    private Bitmap loadBitmapFromUri(Uri uri) {
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(uri);
+            return BitmapFactory.decodeStream(inputStream);
+        } catch (IOException e) {
+            Log.e(TAG, "Error loading bitmap from URI", e);
+        }
+        return null;
+    }
+
+    private Bitmap resizeBitmap(Bitmap bitmap, int desiredWidth, int desiredHeight, Uri savedUri) {
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+
+        float scaleWidth = ((float) desiredWidth) / width;
+        float scaleHeight = ((float) desiredHeight) / height;
+
+        Matrix matrix = new Matrix();
+        matrix.postScale(scaleWidth, scaleHeight);
+
+        try {
+            int orientation = getOrientationFromUri(savedUri); // Get the orientation of the image
+            if (orientation != 0) {
+                matrix.postRotate(orientation);
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Error getting image orientation", e);
+        }
+
+        return Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
+    }
+
+    private void saveBitmapToFile(Bitmap bitmap, String filePath) {
+        try {
+            FileOutputStream outputStream = new FileOutputStream(filePath);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+            outputStream.flush();
+            outputStream.close();
+        } catch (IOException e) {
+            Log.e(TAG, "Error saving bitmap to file", e);
+        }
+    }
+
+    private int getOrientationFromUri(Uri uri) throws IOException {
+        ExifInterface exifInterface = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            exifInterface = new ExifInterface(getContentResolver().openInputStream(uri));
+        }
+        int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                return 90;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                return 180;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                return 270;
+            default:
+                return 0;
+        }
     }
 
     private void takePhoto() {
