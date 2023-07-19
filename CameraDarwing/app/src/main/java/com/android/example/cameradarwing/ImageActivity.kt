@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.android.example.cameradarwing.databinding.ActivityMainBinding
+import org.opencv.android.OpenCVLoader
 
 class ImageActivity : AppCompatActivity() {
 
@@ -20,6 +21,8 @@ class ImageActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
+
+        OpenCVLoader.initDebug()
 
         recyclerView = viewBinding.recyclerView
         recyclerView.layoutManager = LinearLayoutManager(this)
