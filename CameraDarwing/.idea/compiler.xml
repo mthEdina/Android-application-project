@@ -2,7 +2,9 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
+      <module name="android-basics-edina.CameraDarwing.app" target="11" />
       <module name="CameraDarwing.app" target="11" />
+      <module name="CameraDarwing.opencv" target="11" />
     </bytecodeTargetLevel>
   </component>
 </project>

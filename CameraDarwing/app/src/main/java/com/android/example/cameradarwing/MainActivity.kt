@@ -34,10 +34,7 @@ import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Locale
 import android.content.Intent
-import android.net.Uri
-import android.os.Environment
-import androidx.core.content.FileProvider
-import java.io.File
+import org.opencv.android.OpenCVLoader
 
 typealias LumaListener = (luma: Double) -> Unit
 
@@ -73,6 +70,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
         cameraExecutor = Executors.newSingleThreadExecutor()
+
+        if (OpenCVLoader.initDebug()) {
+            Log.d("openCV", "OpenCV loaded successfully")
+        }
     }
 
     private fun takePhoto() {
@@ -210,14 +211,6 @@ class MainActivity : AppCompatActivity() {
 
             imageCapture = ImageCapture.Builder()
                 .build()
-
-            /* val imageAnalyzer = ImageAnalysis.Builder()
-                .build()
-                .also {
-                    it.setAnalyzer(cameraExecutor, LuminosityAnalyzer { luma ->
-                        Log.d(TAG, "Average luminosity: $luma")
-                    })
-                }*/
 
             // Select back camera as a default
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
