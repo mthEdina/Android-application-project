@@ -46,6 +46,7 @@ class ImageActivity : AppCompatActivity() {
         viewBinding.imageCaptureButton.visibility = View.GONE
         viewBinding.videoCaptureButton.visibility = View.GONE
         viewBinding.showImagesButton.visibility = View.GONE
+        viewBinding.panelButton.visibility = View.GONE
 
         recyclerView.adapter = imageAdapter
     }

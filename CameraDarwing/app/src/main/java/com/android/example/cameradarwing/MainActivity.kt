@@ -34,6 +34,8 @@ import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Locale
 import android.content.Intent
+import android.view.View
+import androidx.constraintlayout.widget.ConstraintLayout
 import org.opencv.android.OpenCVLoader
 
 typealias LumaListener = (luma: Double) -> Unit
@@ -48,6 +50,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var cameraExecutor: ExecutorService
 
+    // private lateinit var customView: CustomView
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,20 +65,39 @@ class MainActivity : AppCompatActivity() {
             requestPermissions()
         }
 
+        /*customView = CustomView(this)
+        val layoutParams = ConstraintLayout.LayoutParams(
+            ConstraintLayout.LayoutParams.MATCH_PARENT,
+            ConstraintLayout.LayoutParams.MATCH_PARENT
+        )
+        customView.layoutParams = layoutParams
+        customView.visibility = View.GONE // Kezdetben elrejtjük a panelt*/
+
         // Set up the listeners for take photo and video capture buttons
         viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
         viewBinding.videoCaptureButton.setOnClickListener { captureVideo() }
+        // viewBinding.panelButton.setOnClickListener{ drawSomething() }
 
-       viewBinding.showImagesButton.setOnClickListener {
+        viewBinding.showImagesButton.setOnClickListener {
             val intent = Intent(this, ImageActivity::class.java)
             startActivity(intent)
         }
+        viewBinding.panelButton.setOnClickListener {
+            val intent = Intent(this, ViewActivity::class.java)
+            startActivity(intent)
+        }
+
         cameraExecutor = Executors.newSingleThreadExecutor()
 
         if (OpenCVLoader.initDebug()) {
             Log.d("openCV", "OpenCV loaded successfully")
         }
     }
+
+    /*private fun drawSomething() {
+        isDrawingVisible = !isDrawingVisible
+        customView.visibility = if (isDrawingVisible) View.VISIBLE else View.GONE
+    }*/
 
     private fun takePhoto() {
         // Get a stable reference of the modifiable image capture use case
@@ -86,16 +109,18 @@ class MainActivity : AppCompatActivity() {
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-            if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
                 put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/CameraX-Image")
             }
         }
 
         // Create output options object which contains file + metadata
         val outputOptions = ImageCapture.OutputFileOptions
-            .Builder(contentResolver,
+            .Builder(
+                contentResolver,
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                contentValues)
+                contentValues
+            )
             .build()
 
         // Set up image capture listener, which is triggered after photo has
@@ -109,7 +134,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun
-                        onImageSaved(output: ImageCapture.OutputFileResults){
+                        onImageSaved(output: ImageCapture.OutputFileResults) {
                     val msg = "Photo capture succeeded: ${output.savedUri}"
                     Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                     Log.d(TAG, msg)
@@ -151,21 +176,24 @@ class MainActivity : AppCompatActivity() {
         recording = videoCapture.output
             .prepareRecording(this, mediaStoreOutputOptions)
             .apply {
-                if (PermissionChecker.checkSelfPermission(this@MainActivity,
-                        Manifest.permission.RECORD_AUDIO) ==
-                    PermissionChecker.PERMISSION_GRANTED)
-                {
+                if (PermissionChecker.checkSelfPermission(
+                        this@MainActivity,
+                        Manifest.permission.RECORD_AUDIO
+                    ) ==
+                    PermissionChecker.PERMISSION_GRANTED
+                ) {
                     withAudioEnabled()
                 }
             }
             .start(ContextCompat.getMainExecutor(this)) { recordEvent ->
-                when(recordEvent) {
+                when (recordEvent) {
                     is VideoRecordEvent.Start -> {
                         viewBinding.videoCaptureButton.apply {
                             text = getString(R.string.stop_capture)
                             isEnabled = true
                         }
                     }
+
                     is VideoRecordEvent.Finalize -> {
                         if (!recordEvent.hasError()) {
                             val msg = "Video capture succeeded: " +
@@ -176,8 +204,10 @@ class MainActivity : AppCompatActivity() {
                         } else {
                             recording?.close()
                             recording = null
-                            Log.e(TAG, "Video capture ends with error: " +
-                                    "${recordEvent.error}")
+                            Log.e(
+                                TAG, "Video capture ends with error: " +
+                                        "${recordEvent.error}"
+                            )
                         }
                         viewBinding.videoCaptureButton.apply {
                             text = getString(R.string.start_capture)
@@ -204,8 +234,12 @@ class MainActivity : AppCompatActivity() {
                     it.setSurfaceProvider(viewBinding.viewFinder.surfaceProvider)
                 }
             val recorder = Recorder.Builder()
-                .setQualitySelector(QualitySelector.from(Quality.HIGHEST,
-                    FallbackStrategy.higherQualityOrLowerThan(Quality.SD)))
+                .setQualitySelector(
+                    QualitySelector.from(
+                        Quality.HIGHEST,
+                        FallbackStrategy.higherQualityOrLowerThan(Quality.SD)
+                    )
+                )
                 .build()
             videoCapture = VideoCapture.withOutput(recorder)
 
@@ -221,15 +255,15 @@ class MainActivity : AppCompatActivity() {
 
                 // Bind use cases to camera
                 cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview, imageCapture, videoCapture)
+                    this, cameraSelector, preview, imageCapture, videoCapture
+                )
 
-            } catch(exc: Exception) {
+            } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
 
         }, ContextCompat.getMainExecutor(this))
     }
-
 
 
     private fun requestPermissions() {
@@ -238,7 +272,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(
-            baseContext, it) == PackageManager.PERMISSION_GRANTED
+            baseContext, it
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
     override fun onDestroy() {
@@ -250,7 +285,7 @@ class MainActivity : AppCompatActivity() {
         private const val TAG = "CameraDrawing"
         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
         private val REQUIRED_PERMISSIONS =
-            mutableListOf (
+            mutableListOf(
                 Manifest.permission.CAMERA,
                 Manifest.permission.RECORD_AUDIO
             ).apply {
@@ -262,7 +297,8 @@ class MainActivity : AppCompatActivity() {
 
     private val activityResultLauncher =
         registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions())
+            ActivityResultContracts.RequestMultiplePermissions()
+        )
         { permissions ->
             // Handle Permission granted/rejected
             var permissionGranted = true
@@ -271,9 +307,11 @@ class MainActivity : AppCompatActivity() {
                     permissionGranted = false
             }
             if (!permissionGranted) {
-                Toast.makeText(baseContext,
+                Toast.makeText(
+                    baseContext,
                     "Permission request denied",
-                    Toast.LENGTH_SHORT).show()
+                    Toast.LENGTH_SHORT
+                ).show()
             } else {
                 startCamera()
             }
