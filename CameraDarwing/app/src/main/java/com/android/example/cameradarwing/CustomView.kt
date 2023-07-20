@@ -1,6 +1,6 @@
 package com.android.example.cameradarwing
 
-import android.content.Context
+/*import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
@@ -52,9 +52,4 @@ class CustomView @JvmOverloads constructor(
         invalidate()
         return true
     }
-
-    fun clearDrawing() {
-        path.reset()
-        invalidate()
-    }
-}
+}*/

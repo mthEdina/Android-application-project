@@ -75,11 +75,11 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-    <com.android.example.cameradarwing.CustomView
+    <!--<com.android.example.cameradarwing.CustomView
             android:id="@+id/customView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:visibility="gone"/>
+            android:visibility="gone"/>-->
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 

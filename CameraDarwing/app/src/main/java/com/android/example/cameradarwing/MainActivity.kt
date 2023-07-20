@@ -34,23 +34,22 @@ import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Locale
 import android.content.Intent
+import android.graphics.Path
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import org.opencv.android.OpenCVLoader
+import java.io.ByteArrayOutputStream
+import java.io.ObjectOutputStream
 
-typealias LumaListener = (luma: Double) -> Unit
 
 class MainActivity : AppCompatActivity() {
     private lateinit var viewBinding: ActivityMainBinding
 
     private var imageCapture: ImageCapture? = null
-
     private var videoCapture: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
 
     private lateinit var cameraExecutor: ExecutorService
-
-    // private lateinit var customView: CustomView
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,14 +63,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             requestPermissions()
         }
-
-        /*customView = CustomView(this)
-        val layoutParams = ConstraintLayout.LayoutParams(
-            ConstraintLayout.LayoutParams.MATCH_PARENT,
-            ConstraintLayout.LayoutParams.MATCH_PARENT
-        )
-        customView.layoutParams = layoutParams
-        customView.visibility = View.GONE // Kezdetben elrejtjük a panelt*/
 
         // Set up the listeners for take photo and video capture buttons
         viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
@@ -89,15 +80,7 @@ class MainActivity : AppCompatActivity() {
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
-        if (OpenCVLoader.initDebug()) {
-            Log.d("openCV", "OpenCV loaded successfully")
-        }
     }
-
-    /*private fun drawSomething() {
-        isDrawingVisible = !isDrawingVisible
-        customView.visibility = if (isDrawingVisible) View.VISIBLE else View.GONE
-    }*/
 
     private fun takePhoto() {
         // Get a stable reference of the modifiable image capture use case
@@ -138,6 +121,7 @@ class MainActivity : AppCompatActivity() {
                     val msg = "Photo capture succeeded: ${output.savedUri}"
                     Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                     Log.d(TAG, msg)
+                    Log.d("mentes", msg)
                 }
             }
         )
@@ -284,7 +268,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "CameraDrawing"
         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
-        private val REQUIRED_PERMISSIONS =
+        val REQUIRED_PERMISSIONS =
             mutableListOf(
                 Manifest.permission.CAMERA,
                 Manifest.permission.RECORD_AUDIO
@@ -316,28 +300,4 @@ class MainActivity : AppCompatActivity() {
                 startCamera()
             }
         }
-
-    private class LuminosityAnalyzer(private val listener: LumaListener) : ImageAnalysis.Analyzer {
-
-        private fun ByteBuffer.toByteArray(): ByteArray {
-            rewind()    // Rewind the buffer to zero
-            val data = ByteArray(remaining())
-            get(data)   // Copy the buffer into a byte array
-            return data // Return the byte array
-        }
-
-        override fun analyze(image: ImageProxy) {
-
-            val buffer = image.planes[0].buffer
-            val data = buffer.toByteArray()
-            val pixels = data.map { it.toInt() and 0xFF }
-            val luma = pixels.average()
-
-            listener(luma)
-
-            image.close()
-        }
-    }
-
-
 }
