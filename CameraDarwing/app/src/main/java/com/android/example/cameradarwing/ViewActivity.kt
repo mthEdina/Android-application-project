@@ -3,6 +3,7 @@ package com.android.example.cameradarwing
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.*
+import android.media.MediaScannerConnection
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -44,8 +45,6 @@ class ViewActivity : AppCompatActivity() {
         //gombok pozicioja
         private val saveButtonRect = Rect()
         private val clearButtonRect = Rect()
-
-
         private val path = Path()
 
         // Bitmap a rajz tárolásához
@@ -85,9 +84,7 @@ class ViewActivity : AppCompatActivity() {
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     if (saveButtonRect.contains(x.toInt(), y.toInt())) {
-                        Log.d("mentes", "saveDraewing meghivasa")
                         saveDrawing()
-                        //saveSignature()
                     } else if (clearButtonRect.contains(x.toInt(), y.toInt())) {
                         clearDrawing()
                     } else {
@@ -115,6 +112,12 @@ class ViewActivity : AppCompatActivity() {
         }
 
         private fun saveDrawing() {
+            // Ellenőrizzük, hogy ténylegesen van-e rajzolás
+            if (path.isEmpty) {
+                Toast.makeText(context, "Nothing to save.", Toast.LENGTH_SHORT).show()
+                return
+            }
+
             // Bitmap létrehozása vagy frissítése a rajzzal
             if (drawingBitmap == null) {
                 drawingBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
@@ -122,10 +125,8 @@ class ViewActivity : AppCompatActivity() {
 
             // Új canvas, amely a bitmapre rajzol
             val canvas = Canvas(drawingBitmap!!)
-
             // Rajzolás az útvonalak átmásolásával a canvas-ra
             canvas.drawPath(path, paint)
-
             // A path resetelése
             path.reset()
 
@@ -133,13 +134,11 @@ class ViewActivity : AppCompatActivity() {
             val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val fileName = "Drawing_$timeStamp.png"
             val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-            val directory = File(path, "CameraX-Image") // Hozzáadva: Az új mappa létrehozása vagy megléte
+            val directory = File(path, "CameraX-Image")
             if (!directory.exists()) {
                 directory.mkdirs()
             }
             val file = File(directory, fileName)
-            Log.d("mentes", fileName)
-            Log.d("mentes", file.toString())
 
             // Készítsd el a PNG fájlt a bitmapből
             try {
@@ -154,8 +153,11 @@ class ViewActivity : AppCompatActivity() {
                     val imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
                     outputStream = imageUri?.let { resolver.openOutputStream(it) }
                 } else {
-                    // Ha az Android verzió kevesebb, mint 29, használj FileProvider-t
-                    val directory = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "CameraX-Image")
+                    // Ha az Android verzió kevesebb, mint 29----> FileProvider-t kell hasznalni
+                    val directory = File(
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
+                        "CameraX-Image"
+                    )
                     if (!directory.exists()) {
                         directory.mkdirs()
                     }
@@ -178,21 +180,14 @@ class ViewActivity : AppCompatActivity() {
                 Toast.makeText(context, "Failed to save drawing", Toast.LENGTH_SHORT).show()
                 e.printStackTrace()
             }
-            Log.d("mentes", "elmentve/nem")
+            MediaScannerConnection.scanFile(
+                context,
+                arrayOf(file.absolutePath),
+                arrayOf("image/png"),
+                null
+            )
         }
 
-        fun saveSignature(): Bitmap? {
-            val bitmap = Bitmap.createBitmap(this.width, this.height, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bitmap)
-            draw(canvas)
-            val file = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "CameraX-Image")
-            try {
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, FileOutputStream(file))
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            return bitmap
-        }
 
         override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
             super.onSizeChanged(w, h, oldw, oldh)

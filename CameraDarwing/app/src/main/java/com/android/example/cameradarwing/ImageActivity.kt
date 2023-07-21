@@ -50,6 +50,7 @@ class ImageActivity : AppCompatActivity() {
 
         recyclerView.adapter = imageAdapter
     }
+
     override fun onDestroy() {
         super.onDestroy()
         imageCursor.close()

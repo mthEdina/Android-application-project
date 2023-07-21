@@ -20,9 +20,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.core.Preview
 import androidx.camera.core.CameraSelector
 import android.util.Log
-import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
 import androidx.camera.video.FallbackStrategy
 import androidx.camera.video.MediaStoreOutputOptions
 import androidx.camera.video.Quality
@@ -30,16 +28,11 @@ import androidx.camera.video.QualitySelector
 import androidx.camera.video.VideoRecordEvent
 import androidx.core.content.PermissionChecker
 import com.android.example.cameradarwing.databinding.ActivityMainBinding
-import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Locale
 import android.content.Intent
-import android.graphics.Path
-import android.view.View
-import androidx.constraintlayout.widget.ConstraintLayout
-import org.opencv.android.OpenCVLoader
-import java.io.ByteArrayOutputStream
-import java.io.ObjectOutputStream
+import android.os.Environment
+import java.io.File
 
 
 class MainActivity : AppCompatActivity() {
@@ -67,8 +60,6 @@ class MainActivity : AppCompatActivity() {
         // Set up the listeners for take photo and video capture buttons
         viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
         viewBinding.videoCaptureButton.setOnClickListener { captureVideo() }
-        // viewBinding.panelButton.setOnClickListener{ drawSomething() }
-
         viewBinding.showImagesButton.setOnClickListener {
             val intent = Intent(this, ImageActivity::class.java)
             startActivity(intent)
@@ -79,6 +70,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
+
+        val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        val directory = File(path, "CameraX-Image")
+        if (!directory.exists()) {
+            val isDirectoryCreated = directory.mkdirs()
+            if (!isDirectoryCreated) {
+                Log.e(TAG, "CameraX-Image folder failed to make")
+                return
+            }
+        }
 
     }
 
@@ -121,7 +122,6 @@ class MainActivity : AppCompatActivity() {
                     val msg = "Photo capture succeeded: ${output.savedUri}"
                     Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
                     Log.d(TAG, msg)
-                    Log.d("mentes", msg)
                 }
             }
         )
@@ -206,7 +206,6 @@ class MainActivity : AppCompatActivity() {
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
-
         cameraProviderFuture.addListener({
             // Used to bind the lifecycle of cameras to the lifecycle owner
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
@@ -226,7 +225,6 @@ class MainActivity : AppCompatActivity() {
                 )
                 .build()
             videoCapture = VideoCapture.withOutput(recorder)
-
             imageCapture = ImageCapture.Builder()
                 .build()
 
@@ -236,16 +234,13 @@ class MainActivity : AppCompatActivity() {
             try {
                 // Unbind use cases before rebinding
                 cameraProvider.unbindAll()
-
                 // Bind use cases to camera
                 cameraProvider.bindToLifecycle(
                     this, cameraSelector, preview, imageCapture, videoCapture
                 )
-
             } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
-
         }, ContextCompat.getMainExecutor(this))
     }
 
@@ -279,6 +274,7 @@ class MainActivity : AppCompatActivity() {
             }.toTypedArray()
     }
 
+    // it = implicit name of a single parameter
     private val activityResultLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
@@ -287,7 +283,7 @@ class MainActivity : AppCompatActivity() {
             // Handle Permission granted/rejected
             var permissionGranted = true
             permissions.entries.forEach {
-                if (it.key in REQUIRED_PERMISSIONS && it.value == false)
+                if (it.key in REQUIRED_PERMISSIONS && !it.value)
                     permissionGranted = false
             }
             if (!permissionGranted) {

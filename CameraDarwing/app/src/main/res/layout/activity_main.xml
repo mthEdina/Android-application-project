@@ -28,6 +28,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
+            <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"/>
         </RelativeLayout>
     </androidx.camera.view.PreviewView>
 
@@ -36,13 +40,12 @@
             android:layout_width="110dp"
             android:layout_height="110dp"
             android:layout_marginBottom="50dp"
-            android:layout_marginEnd="10dp"
             android:elevation="2dp"
-            android:layout_marginStart="50dp"
+            android:layout_marginStart="25dp"
             android:text="@string/take_photo"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintHorizontal_bias="1"/>
+            app:layout_constraintEnd_toStartOf="@+id/video_capture_button" android:layout_marginEnd="15dp"/>
 
     <Button
             android:id="@+id/video_capture_button"
@@ -69,17 +72,6 @@
             app:layout_constraintStart_toEndOf="@id/video_capture_button"
             app:layout_constraintHorizontal_bias="1" />
 
-
-    <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-    <!--<com.android.example.cameradarwing.CustomView
-            android:id="@+id/customView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone"/>-->
 
 </androidx.constraintlayout.widget.ConstraintLayout>
 

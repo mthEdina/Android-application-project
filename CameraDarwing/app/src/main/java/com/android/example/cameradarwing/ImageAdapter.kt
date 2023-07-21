@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,6 +21,7 @@ import org.opencv.android.Utils
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
 
+//RecyclerView a ListView tovabbfejlesztett verzioja
 class ImageAdapter(private val context: Context, private var cursor: Cursor) :
     RecyclerView.Adapter<ImageAdapter.ImageViewHolder>() {
 
@@ -33,6 +35,7 @@ class ImageAdapter(private val context: Context, private var cursor: Cursor) :
         return ImageViewHolder(view)
     }
 
+    //megadjuk a kep eleresi utjat (imageUri) a cursor segitsegevel
     @SuppressLint("Range")
     override fun onBindViewHolder(holder: ImageViewHolder, position: Int) {
         cursor.moveToPosition(position)
@@ -46,13 +49,16 @@ class ImageAdapter(private val context: Context, private var cursor: Cursor) :
         )
 
         // Load the image into a Glide ImageView directly
+        // Glide is an image-loading library for Android
         Glide.with(context)
             .asBitmap()
             .load(imageUri)
+            .override(800, 800)
             .centerCrop()
             .into(object : CustomTarget<Bitmap>() {
                 override fun onResourceReady(bitmap: Bitmap, transition: Transition<in Bitmap>?) {
                     // Convert the bitmap to Mat for OpenCV processing
+                    // Mat = basic image container
                     val originalMat = Mat()
                     Utils.bitmapToMat(bitmap, originalMat)
 
@@ -69,11 +75,10 @@ class ImageAdapter(private val context: Context, private var cursor: Cursor) :
                 }
 
                 override fun onLoadCleared(placeholder: Drawable?) {
-                    // Handle any clean-up if needed
+                    Log.d("ImageAdapter", "Image load cleared")
                 }
             })
     }
-
 
 
     override fun getItemCount(): Int {
